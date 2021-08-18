@@ -1,0 +1,30 @@
+#!/usr/bin/env ruby
+# frozen_string_literal: true
+
+require 'yaml'
+
+def flatten_keys(hash)
+  hash.flat_map do |k, v|
+    if v.is_a?(Hash)
+      flatten_keys(v).map { |e| "#{k}.#{e}" }
+    else
+      k
+    end
+  end
+end
+
+directory = ARGV[0]
+unless directory && Dir.exist?(directory)
+  puts 'Usage: find_duplicated_values directory'
+  exit 1
+end
+
+yamls = Dir.glob(File.join(directory, '**', '*.{yml,yaml}'))
+
+keys = yamls.flat_map do |yaml|
+  flatten_keys(YAML.load_file(yaml))
+end
+
+result = keys.tally.filter { |_, v| v > 1 }.sort_by { |_, v| v }
+
+pp result
